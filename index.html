@@ -1,0 +1,568 @@
+<!--
+  Hey fellow developer! 👋
+  Welcome to the source code of my pro card.
+  Built with HTML5, CSS (Glassmorphism, Accessible UX & Dynamic Radial Glow) and Vanilla JS.
+  Feel free to reach out via LinkedIn, GitHub or Email if you want to connect!
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maxime Szczypa Merle - Professional Card</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* --------------------------------------------------------------------------
+     * CUSTOMIZATION VARIABLES
+     * -------------------------------------------------------------------------- */
+    :root {
+      --profile-image: url('./maxsz_profil.jpeg');
+      --card-blur: 20px;
+      --card-max-width: 380px;
+      --glow-radius: 480px;
+      --transition-speed: 0.4s;
+    }
+
+    /* DARK THEME (Night Mode) */
+    [data-theme="dark"] {
+      --bg-color: #090d16;
+      --card-bg: rgba(255, 255, 255, 0.07);
+      --card-border-color: rgba(255, 255, 255, 0.18);
+      --accent-pink: #ec4899;
+      --accent-purple: #8b5cf6;
+      --title-color: #d8b4fe;
+      --text-color: #e2e8f0;
+      --bg-brightness: 0.35;
+      --toggle-color: rgba(255, 255, 255, 0.6);
+      --toggle-hover: rgba(255, 255, 255, 0.95);
+      --tooltip-bg: rgba(15, 23, 42, 0.95);
+      --focus-ring: #ec4899;
+    }
+
+    /* LIGHT THEME (Day Mode) */
+    [data-theme="light"] {
+      --bg-color: #f1f5f9;
+      --card-bg: rgba(255, 255, 255, 0.55);
+      --card-border-color: rgba(255, 255, 255, 0.7);
+      --accent-pink: #d946ef;
+      --accent-purple: #6366f1;
+      --title-color: #5b21b6;
+      --text-color: #0f172a;
+      --bg-brightness: 0.75;
+      --toggle-color: rgba(15, 23, 42, 0.6);
+      --toggle-hover: rgba(15, 23, 42, 0.95);
+      --tooltip-bg: rgba(255, 255, 255, 0.95);
+      --focus-ring: #6366f1;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      background-color: var(--bg-color);
+      padding: 20px;
+      position: relative;
+      transition: background-color var(--transition-speed) ease;
+    }
+
+    /* Focus visible outline for accessibility */
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+
+    /* Blurred background layer */
+    .bg-image {
+      position: fixed;
+      inset: -30px;
+      background-image: var(--profile-image);
+      background-size: cover;
+      background-position: center;
+      filter: blur(55px) brightness(var(--bg-brightness));
+      z-index: 1;
+      transition: filter var(--transition-speed) ease;
+    }
+
+    /* Screen reader announcement region */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Top-Right Control Actions Container */
+    .controls-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Controls Styling */
+    .control-btn {
+      background: transparent;
+      border: none;
+      color: var(--toggle-color);
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 20px;
+      transition: color var(--transition-speed) ease, transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .control-btn:hover {
+      color: var(--toggle-hover);
+      transform: translateY(-1px);
+    }
+
+    .theme-toggle-btn {
+      font-size: 1.15rem;
+    }
+
+    /* Outer wrapper managing cursor-following neon glow */
+    .card-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: var(--card-max-width);
+      border-radius: 24px;
+      padding: 1.5px;
+      z-index: 10;
+      
+      --mouse-x: 50%;
+      --mouse-y: 50%;
+      --glow-opacity: 0;
+      
+      filter: drop-shadow(0 0 calc(20px * var(--glow-opacity)) rgba(236, 72, 153, calc(var(--glow-opacity) * 0.8)))
+              drop-shadow(0 0 calc(40px * var(--glow-opacity)) rgba(139, 92, 246, calc(var(--glow-opacity) * 0.6)));
+      transition: filter 0.15s ease-out;
+    }
+
+    /* Glowing border mask */
+    .card-wrapper::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      padding: 1.5px;
+      background: radial-gradient(
+        300px circle at var(--mouse-x) var(--mouse-y),
+        rgba(255, 255, 255, calc(var(--glow-opacity) * 1)),
+        var(--accent-pink),
+        var(--accent-purple),
+        transparent 70%
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* Glassmorphic main container */
+    .card {
+      position: relative;
+      width: 100%;
+      padding: 2.5rem 1.75rem;
+      border-radius: 23px;
+      text-align: center;
+      color: var(--text-color);
+      overflow: hidden;
+
+      background: var(--card-bg);
+      backdrop-filter: blur(var(--card-blur)) saturate(180%);
+      -webkit-backdrop-filter: blur(var(--card-blur)) saturate(180%);
+      border: 1px solid var(--card-border-color);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      transition: background var(--transition-speed) ease, border-color var(--transition-speed) ease, color var(--transition-speed) ease;
+    }
+
+    /* Internal glass specular reflection */
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        350px circle at var(--mouse-x) var(--mouse-y),
+        rgba(255, 255, 255, calc(var(--glow-opacity) * 0.15)),
+        rgba(236, 72, 153, calc(var(--glow-opacity) * 0.08)),
+        transparent 65%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .card-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .avatar {
+      width: 105px;
+      height: 105px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--card-border-color);
+      margin-bottom: 1.25rem;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      font-size: clamp(1.35rem, 5vw, 1.65rem);
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.5px;
+    }
+
+    .title {
+      font-size: clamp(0.75rem, 3vw, 0.85rem);
+      color: var(--title-color);
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      transition: color var(--transition-speed) ease;
+    }
+
+    .bio {
+      font-size: clamp(0.85rem, 3.5vw, 0.95rem);
+      color: var(--text-color);
+      line-height: 1.5;
+      margin-bottom: 1.75rem;
+      transition: color var(--transition-speed) ease;
+    }
+
+    /* CTA button */
+    .cta-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 14px;
+      margin-bottom: 1.5rem;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 20px rgba(236, 72, 153, 0.35);
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(236, 72, 153, 0.6);
+    }
+
+    /* Social Buttons Container */
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .social-btn {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--card-border-color);
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-size: 1.3rem;
+      transition: all 0.25s ease;
+    }
+
+    /* Optical centering alignment for icons */
+    .social-btn i {
+      padding-top: 3px;
+    }
+
+    .social-btn:hover {
+      border-color: var(--title-color);
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Email Tooltip */
+    .tooltip-container {
+      position: relative;
+    }
+
+    .tooltip {
+      position: absolute;
+      bottom: calc(100% + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(5px);
+      background: var(--tooltip-bg);
+      color: var(--text-color);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      border: 1px solid var(--card-border-color);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+      z-index: 20;
+    }
+
+    /* Tooltip Arrow */
+    .tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 5px;
+      border-style: solid;
+      border-color: var(--tooltip-bg) transparent transparent transparent;
+    }
+
+    .tooltip-container:hover .tooltip,
+    .social-btn:focus-visible + .tooltip {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ACCESSIBILITY PREFERENCES (A11Y) */
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .card-wrapper { filter: none !important; }
+    }
+
+    @media (forced-colors: active) {
+      .card, .cta-btn, .social-btn, .control-btn {
+        border: 2px solid CanvasText !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 2rem 1.25rem; }
+      .avatar { width: 90px; height: 90px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen reader live announcement region for feedback -->
+  <div id="srAnnouncement" class="sr-only" aria-live="polite"></div>
+
+  <!-- Blurred background -->
+  <div class="bg-image" aria-hidden="true"></div>
+
+  <!-- Discrete Controls Top-Right -->
+  <nav class="controls-container" aria-label="Quick Controls">
+    <button class="control-btn" id="langToggle" aria-label="Switch Language to English">EN</button>
+    <button class="control-btn theme-toggle-btn" id="themeToggle" aria-label="Toggle Color Theme">
+      <i class="fa-solid fa-moon" id="themeIcon" aria-hidden="true"></i>
+    </button>
+  </nav>
+
+  <!-- Interactive card container -->
+  <main class="card-wrapper" id="cardWrapper">
+    <div class="card">
+      <div class="card-content">
+        <img src="./maxsz_profil.jpeg" alt="Maxime Szczypa Merle" class="avatar">
+        
+        <h1 data-i18n="name">Maxime Szczypa Merle</h1>
+        <p class="title" data-i18n="title">Fullstack Software Developer</p>
+        
+        <p class="bio" data-i18n="bio">...</p>
+
+        <a href="mailto:contact@maxsz.me" class="cta-btn">
+          <i class="fa-regular fa-paper-plane" aria-hidden="true"></i>
+          <span data-i18n="cta">Contact Me</span>
+        </a>
+
+        <div class="social-links" aria-label="Social media & Contact">
+          <a href="https://www.linkedin.com/in/maximeszczypa/" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="LinkedIn Profile"><i class="fa-brands fa-linkedin-in" aria-hidden="true"></i></a>
+          <a href="https://github.com/mxsz-me" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="GitHub Profile"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+          
+          <!-- Email Button with Tooltip and Copy/Mailto Action -->
+          <div class="tooltip-container">
+            <a href="mailto:contact@maxsz.me" class="social-btn" id="emailBtn" aria-label="Email contact@maxsz.me" aria-describedby="emailTooltip">
+              <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+            </a>
+            <span class="tooltip" id="emailTooltip" role="tooltip" data-i18n="email_tooltip">contact@maxsz.me</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /* --------------------------------------------------------------------------
+     * 1. INTERNATIONALIZATION (i18n) & MANUAL SWITCH
+     * -------------------------------------------------------------------------- */
+    const langToggleBtn = document.getElementById('langToggle');
+    let currentTranslations = {};
+
+    function getInitialLanguage() {
+      const savedLang = localStorage.getItem('user-lang');
+      if (savedLang) return savedLang;
+      const userLang = navigator.language || navigator.userLanguage;
+      return userLang.startsWith('fr') ? 'fr' : 'en';
+    }
+
+    async function setLanguage(lang) {
+      try {
+        const response = await fetch(`./locales/${lang}.json`);
+        currentTranslations = await response.json();
+
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+          const key = element.getAttribute('data-i18n');
+          if (currentTranslations[key]) {
+            element.textContent = currentTranslations[key];
+          }
+        });
+
+        document.documentElement.lang = lang;
+        langToggleBtn.textContent = lang === 'fr' ? 'EN' : 'FR';
+        langToggleBtn.setAttribute('aria-label', lang === 'fr' ? 'Passer en Anglais' : 'Switch to French');
+        localStorage.setItem('user-lang', lang);
+      } catch (error) {
+        console.warn('Could not load translation file:', error);
+      }
+    }
+
+    langToggleBtn.addEventListener('click', () => {
+      const currentLang = document.documentElement.lang || 'en';
+      const newLang = currentLang === 'fr' ? 'en' : 'fr';
+      setLanguage(newLang);
+    });
+
+    /* --------------------------------------------------------------------------
+     * 2. EMAIL COPY & MAILTO TRIGGER (WITH ACCESSIBILITY FEEDBACK)
+     * -------------------------------------------------------------------------- */
+    const emailBtn = document.getElementById('emailBtn');
+    const emailTooltip = document.getElementById('emailTooltip');
+    const srAnnouncement = document.getElementById('srAnnouncement');
+    const emailAddress = 'contact@maxsz.me';
+
+    emailBtn.addEventListener('click', (e) => {
+      navigator.clipboard.writeText(emailAddress).then(() => {
+        const copiedMsg = currentTranslations.email_copied || 'Copied!';
+        emailTooltip.textContent = copiedMsg;
+        srAnnouncement.textContent = copiedMsg; // Screen reader announcement
+        
+        setTimeout(() => {
+          emailTooltip.textContent = currentTranslations.email_tooltip || emailAddress;
+        }, 2000);
+      });
+    });
+
+    /* --------------------------------------------------------------------------
+     * 3. AUTOMATIC TIME-BASED DAY/NIGHT THEME & MANUAL TOGGLE
+     * -------------------------------------------------------------------------- */
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    function getAutoTheme() {
+      const currentHour = new Date().getHours();
+      return (currentHour >= 7 && currentHour < 19) ? 'light' : 'dark';
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'dark') {
+        themeIcon.className = 'fa-solid fa-sun';
+      } else {
+        themeIcon.className = 'fa-solid fa-moon';
+      }
+    }
+
+    const savedTheme = localStorage.getItem('user-theme');
+    const activeTheme = savedTheme ? savedTheme : getAutoTheme();
+    applyTheme(activeTheme);
+
+    themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('user-theme', newTheme);
+      applyTheme(newTheme);
+    });
+
+    /* --------------------------------------------------------------------------
+     * 4. DYNAMIC MOUSE TRACKING & GLOW LOGIC
+     * -------------------------------------------------------------------------- */
+    const wrapper = document.getElementById('cardWrapper');
+
+    document.addEventListener('mousemove', (e) => {
+      // Skip calculations if user prefers reduced motion
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      const rect = wrapper.getBoundingClientRect();
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+
+      const cardCenterX = rect.left + rect.width / 2;
+      const cardCenterY = rect.top + rect.height / 2;
+
+      const distance = Math.hypot(mouseX - cardCenterX, mouseY - cardCenterY);
+      const maxDistance = 480; 
+
+      if (distance < maxDistance) {
+        const intensity = Math.pow(1 - (distance / maxDistance), 1.1);
+        const xPercent = ((mouseX - rect.left) / rect.width) * 100;
+        const yPercent = ((mouseY - rect.top) / rect.height) * 100;
+
+        wrapper.style.setProperty('--mouse-x', `${xPercent}%`);
+        wrapper.style.setProperty('--mouse-y', `${yPercent}%`);
+        wrapper.style.setProperty('--glow-opacity', intensity.toFixed(2));
+      } else {
+        wrapper.style.setProperty('--glow-opacity', '0');
+      }
+    });
+
+    if ('ontouchstart' in window) {
+      wrapper.style.setProperty('--glow-opacity', '0.65');
+      wrapper.style.setProperty('--mouse-x', '50%');
+      wrapper.style.setProperty('--mouse-y', '0%');
+    }
+
+    // Init language on load
+    setLanguage(getInitialLanguage());
+  </script>
+</body>
+</html>
